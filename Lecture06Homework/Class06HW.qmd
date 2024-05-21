@@ -1,0 +1,80 @@
+---
+title: "BIMM143 Class06 HW"
+author: "Juliette Bokor (PID: A16808121)"
+format: pdf
+---
+ > Q6. How would you generalize the original code above to work with any set of input
+protein structures?
+Write your own function starting from the code above that analyzes protein drug
+interactions by reading in any protein PDB data and outputs a plot for the specified
+protein. (See class lecture 9 for further details)
+
+Oiriginal Provided Code
+```{r}
+library(bio3d)
+s1 <- read.pdb("4AKE") # kinase with drug
+s2 <- read.pdb("1AKE") # kinase no drug
+s3 <- read.pdb("1E4Y") # kinase with drug
+s1.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s2.chainA <- trim.pdb(s2, chain="A", elety="CA")
+s3.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s1.b <- s1.chainA$atom$b
+s2.b <- s2.chainA$atom$b
+s3.b <- s3.chainA$atom$b
+plotb3(s1.b, sse=s1.chainA, typ="l", ylab="Bfactor")
+plotb3(s2.b, sse=s2.chainA, typ="l", ylab="Bfactor")
+plotb3(s3.b, sse=s3.chainA, typ="l", ylab="Bfactor")
+```
+
+
+
+Notes on the purpose/function of the provided code:
+
+Used to define new more specific objects by trimming the pdb file: 1st term is the file, 2nd term defines chain A, third term is the atom type; CA is alpha carbons)
+```{r}
+# s1.chainA <- trim.pdb(s1, chain="A", elety="CA")
+```
+
+This is selecting for the B factor of each atom that is included in the trimmed pdb structure; B factor is a measure of the flexibility of a residue: high b factor is more mobility
+```{r}
+# s1.b <- s1.chainA$atom$b
+```
+
+The plotb3 fucntion creates plots of 3d protein structures with their b factors
+The first argument is what contain the b factors, 2nd is for the secondary structure elements that can be displayed in the plot, in this case the sse should come from the trimmed pdb files; 3rd indicates that it should be a line plot; 4th indicates the label for the y axis
+```{r}
+# plotb3(s1.b, sse=s1.chainA, typ="l", ylab="Bfactor")
+```
+
+
+
+
+My condensed function: 
+
+```{r}
+# the variable x is the input to the function, a pdb file
+x <- "1AKE"
+# I defined my function as plotpdb; gave it the input x (the pdb file)
+plotpdb <- function(x) {
+  s.chainA <- trim.pdb(read.pdb(x), chain="A", elety="CA")
+  s.bfactor <- s.chainA$atom$b
+  plotb3(s.bfactor, sse=s.chainA, typ="l", ylab="Bfactor")
+}
+
+#s.chainA: defines trimmed pdb file, with selection for chain A and alpha carbons, uses
+#the pdb file x as the input
+#s.bfactor: defines the b factor, takes the s.chainA variable previously defined as input
+#plotb3: plots the b factor (first argument) against the protein structure from the 
+#trimmed pdb file (second argument)  
+ 
+#all together my function plotpdb reads and trims a pdb file, defines the b factor; 
+#and makes a plot output of b factor against protein structure from the input of a pdb file
+
+plotpdb(x)
+```
+
+
+
+
+
+
