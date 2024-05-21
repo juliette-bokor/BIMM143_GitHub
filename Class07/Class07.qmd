@@ -1,0 +1,281 @@
+---
+title: "Class07: Machine Learning 1"
+author: "Juliette Bokor (PID: A16808121"
+format: pdf
+---
+
+Today we will start our multi-part exploration of some keu machine learning methods. We will begin with clustering - finding groupings in data, and then dimensionallity reduction. 
+
+
+## CLustering
+
+Let's start with "k-means" clustering . 
+The main function in base R for this `kmeans()`. 
+
+```{r}
+#Make up some data
+hist(rnorm(100000, mean=3))
+```
+
+
+```{r}
+tmp <- c(rnorm(30, -3), rnorm(30, +3))
+x <- cbind(x=tmp, y=rev(tmp))
+plot(x)
+```
+
+
+Now let's try out `kmeans()`
+
+```{r}
+km <- kmeans(x, centers=2)
+km
+```
+
+
+```{r}
+attributes(km)
+```
+
+
+> Q. How many points in each cluster? 
+
+```{r}
+km$size
+```
+
+
+> Q. What component of your result object details cluster argument/membership? 
+
+```{r}
+km$cluster
+```
+
+
+
+> Q. What are centers/mean values of each cluster? 
+
+```{r}
+km$centers
+```
+
+
+> Q. Make a plot of your data showing your clustering results. 
+
+```{r}
+plot(x, col=c(1,2))
+```
+
+
+```{r}
+#Selecting the cluster attribute vector from the the results of the kmeans() function we used before and using it to determine the color of the plot
+plot(x, col=km$cluster)
+points(km$centers, col="green", pch=15, cex=3)
+```
+
+
+> Q. Run `kmeans()` again and cluster in 4 groupsand plot the results. 
+
+```{r}
+km4 <- kmeans(x, centers=4)
+km4
+```
+
+```{r}
+plot(x, col=km4$cluster)
+```
+
+## Hierarchical Clustering
+
+This form of clustering aims to reveal the structure in your data by progressively grouping points into an ever smaller number of clusters. 
+
+The main function in base R for this is called `hclust()`. This function does not take our input data directly but wants a "distance matrix" that details how (dis)similar all our input points are to each other. 
+
+```{r}
+#you can't just input x alone, hclust needs a distance matrix as it's input, which comes from dist(x)
+hc <- hclust(dist(x))
+hc
+```
+
+The printout above is not very useful (unlike the one from kmeans) but there is a useful `plot()` method. 
+
+```{r}
+plot(hc)
+abline(h=10, col="red")
+```
+
+
+To get my main result (my cluster membership vector) I need to "cut" my tree using the function `cutree()`
+
+
+```{r}
+grps <- cutree(hc, h=10)
+grps
+```
+
+
+```{r}
+plot(x, col=grps)
+```
+
+
+Cutting the tree a second time at h=4, splits the plotted data into more than two clusters. 
+```{r}
+plot(x, col=cutree(hc, h=4))
+```
+
+
+
+
+
+#Principal Component Analysis (PCA) 
+
+The goal of PCA is to reduce the dimensionality of a data set down to a smaller subset of new variables (called PCs) that are a useful basis for further analysis, like visualization, clustering, etc. 
+
+
+```{r}
+url <- "https://tinyurl.com/UK-foods"
+x <- read.csv(url, row.names = 1)
+head(x)
+```
+
+```{r}
+dim(x)
+```
+
+
+
+```{r}
+barplot(as.matrix(x), beside=T, col=rainbow(nrow(x)))
+```
+ 
+
+Changing the beside argument of the barplot() function changes the plot to be: 
+```{r}
+barplot(as.matrix(x), col=rainbow(nrow(x)))
+```
+
+
+The so-called "pairs" plot can be useful for small datasets: 
+
+```{r}
+pairs(x, col=rainbow(nrow(x)), pch=16)
+```
+
+
+These plots show each country in comparison to each other one - hence the title "pairs". You only need to look at half, the information is duplicated. Any departure from the straight diagnol line indicates a difference in the values between countries. 
+
+
+So the pairs plot is useful for small data sets but it can be a lot of work to interpret and gets untraceable for larger datasets. 
+
+PCA to the rescue...
+
+The main function to do PCA in base R is called `prcomp()`. This functions wants the transpose of our data in this case. 
+
+```{r}
+#need to switch the data, we want foods as the columns for PCA
+pca <- prcomp(t(x))
+summary(pca)
+```
+
+```{r}
+attributes(pca)
+```
+
+x shows how the data lies on the new axes 
+```{r}
+pca$x
+```
+
+A major PCA result viz is called a "PCA plot" (a.k.a. a score plot, bi-plot, PC1 vs PC2 plot, ordination plot)
+
+```{r}
+mycols <- c("orange", "red", "blue", "darkgreen")
+plot(pca$x[,1], pca$x[,2], col=mycols, pch=16, 
+     xlab="PC1", ylab="PC2")
+abline(h=0, col="gray")
+abline(v=0, col="gray")
+```
+
+
+
+Another important output from PCA is called the "loadings" vector or "rotation" component - this tells us how much the original variables (the foods in this case) contribute to the new PCs. 
+```{r}
+pca$rotation
+```
+
+PCA looks to be a super useful method for gaining some insight into high dimensional data that is difficult to examine in other ways. 
+
+
+# PCA of RNAseq Data
+
+```{r}
+url2 <- "https://tinyurl.com/expression-CSV"
+rna.data <- read.csv(url2, row.names=1)
+head(rna.data)
+```
+
+```{r}
+## Again we have to take the transpose of our data 
+pca <- prcomp(t(rna.data), scale=TRUE)
+```
+
+```{r}
+summary(pca)
+```
+
+> Q. How many genes are in the data set? 
+
+```{r}
+nrow(rna.data)
+```
+
+
+```{r}
+attributes(pca)
+```
+
+```{r}
+head(pca$x)
+```
+```{r}
+kmeans(pca$x[,1], centers=2)
+```
+
+
+I will make a main result figure using ggplot. 
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+res <- as.data.frame(pca$x)
+head(res)
+```
+
+
+```{r}
+mycols <- c(rep("blue", 5), rep("red", 5))
+mycols
+
+ggplot(res) +
+  aes(x=PC1, y=PC2, label=row.names(res)) + 
+  geom_point(col=mycols) + 
+  geom_label(col=mycols)
+
+```
+
+
+```{r}
+colnames(rna.data)
+```
+
+
+
+
+
+
+
+
+
